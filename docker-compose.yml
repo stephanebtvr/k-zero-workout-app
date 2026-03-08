@@ -1,0 +1,114 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# docker-compose.yml — Orchestration des services de développement local
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Services :
+#   backend  : API Spring Boot (build depuis ./backend)
+#   postgres : Base de données PostgreSQL 16
+#   pgadmin  : Interface web d'administration PostgreSQL (optionnel)
+#
+# Démarrage :
+#   docker-compose up --build          → backend + postgres
+#   docker-compose --profile tools up  → + pgadmin
+#
+# Arrêt :
+#   docker-compose down               → arrête les conteneurs
+#   docker-compose down -v            → + supprime les volumes (reset DB)
+
+services:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # PostgreSQL 16 — Base de données
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  postgres:
+    image: postgres:16-alpine
+    container_name: ironpath-postgres
+    restart: unless-stopped
+    # Variables d'initialisation du conteneur PostgreSQL
+    # Ces variables ne sont lues qu'à la première création du conteneur
+    # Pour réinitialiser, supprimer le volume : docker-compose down -v
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ironpath}
+      POSTGRES_USER: ${POSTGRES_USER:-ironpath}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ironpath_dev}
+    ports:
+      # Port PostgreSQL exposé sur l'hôte pour les outils de dev (DBeaver, psql, etc.)
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      # Volume nommé pour persister les données entre les redémarrages
+      # Les données survivent à `docker-compose down` mais pas à `down -v`
+      - ironpath-postgres-data:/var/lib/postgresql/data
+    # Health check pour vérifier que PostgreSQL accepte les connexions
+    # pg_isready est un utilitaire PostgreSQL natif
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ironpath} -d ${POSTGRES_DB:-ironpath}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Backend Spring Boot — API REST
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ironpath-backend
+    restart: unless-stopped
+    # Fichier de variables d'environnement
+    # Copier .env.example vers .env et adapter les valeurs
+    env_file:
+      - .env
+    # Variables d'environnement spécifiques au conteneur Docker
+    # Surcharge les variables du .env si nécessaire
+    environment:
+      # URL JDBC vers le PostgreSQL Docker (hostname = nom du service Docker)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ironpath}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-ironpath}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-ironpath_dev}
+      # Profil Spring actif: dev pour le développement local
+      SPRING_PROFILES_ACTIVE: dev
+    ports:
+      # API accessible sur http://localhost:8080
+      - "8080:8080"
+    # Attend que PostgreSQL soit prêt avant de démarrer
+    # Condition "service_healthy" utilise le healthcheck du service postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # pgAdmin 4 — Interface d'administration PostgreSQL (optionnel)
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # Activé uniquement avec le profil "tools" :
+  #   docker-compose --profile tools up
+  # Accessible sur http://localhost:5050
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ironpath-pgadmin
+    restart: unless-stopped
+    # Profil Docker Compose : ce service ne démarre que si le profil "tools" est activé
+    # Évite de consommer des ressources quand on n'a pas besoin de l'interface admin
+    profiles:
+      - tools
+    environment:
+      # Identifiants de connexion à l'interface pgAdmin (pas à PostgreSQL)
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@ironpath.dev}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      # Écoute sur le port 80 à l'intérieur du conteneur
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      # Interface web pgAdmin accessible sur http://localhost:5050
+      - "5050:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Volumes nommés
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+volumes:
+  # Persistance des données PostgreSQL
+  # Nommé explicitement pour faciliter l'identification
+  ironpath-postgres-data:
+    driver: local

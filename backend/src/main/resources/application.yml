@@ -1,0 +1,151 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# application.yml — Configuration Spring Boot IronPath
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Profils disponibles :
+#   - (default) : configuration commune
+#   - dev       : développement local avec Docker
+#   - prod      : production sur Render
+#
+# Les valeurs sensibles sont injectées via variables d'environnement.
+# Jamais de secret en clair dans ce fichier.
+
+spring:
+  application:
+    name: ironpath-api
+
+  # ── JPA / Hibernate ──
+  # validate : Hibernate vérifie que le schéma correspond aux entités
+  # mais ne le modifie PAS (c'est Flyway qui gère les migrations)
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Formatage SQL dans les logs pour lisibilité en dev
+        format_sql: true
+    # Désactivation de l'Open Session in View :
+    # évite les lazy-loading accidentels dans les controllers
+    # et force une gestion explicite des transactions dans la couche service
+    open-in-view: false
+
+  # ── Flyway ──
+  # Migrations versionnées dans src/main/resources/db/migration/
+  # Convention : V{version}__{description}.sql
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Valide que les migrations déjà appliquées n'ont pas été modifiées
+    # Protège contre les modifications accidentelles de migrations en production
+    validate-on-migrate: true
+
+  # ── Servlet ──
+  servlet:
+    multipart:
+      # Taille max pour l'upload d'avatars (5 Mo)
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+# ── Préfixe API ──
+# Toutes les routes commencent par /api/v1 pour le versioning
+server:
+  servlet:
+    context-path: /api/v1
+
+# ── Documentation OpenAPI ──
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    # Trie les endpoints par tags puis par méthode HTTP
+    operations-sorter: method
+    tags-sorter: alpha
+
+# ── Configuration JWT ──
+# Les valeurs sont injectées via variables d'environnement
+# pour ne jamais exposer de secrets dans le code source
+app:
+  jwt:
+    # Secret HMAC-SHA256 pour signer les tokens (min 64 caractères en base64)
+    # Générer avec : openssl rand -base64 64
+    secret: ${JWT_SECRET:default-dev-secret-change-me-in-production-this-must-be-at-least-64-chars-long}
+    # Durée de vie de l'access token : 15 minutes
+    # Court pour limiter l'impact d'un token volé
+    access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
+    # Durée de vie du refresh token : 7 jours
+    # Plus long car stocké de manière sécurisée côté client
+    refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  # ── CORS ──
+  # Origines autorisées pour les requêtes cross-origin
+  cors:
+    allowed-origins: ${CORS_ORIGINS:http://localhost:4200,http://localhost:8081}
+
+# ── Logging ──
+logging:
+  level:
+    # Logging racine : INFO pour ne pas noyer les logs
+    root: INFO
+    # Logging applicatif : DEBUG en dev pour tracer les flux
+    com.ironpath: DEBUG
+    # SQL Hibernate : désactivé par défaut (activé par profil dev si besoin)
+    org.hibernate.SQL: WARN
+
+---
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PROFIL DEV — Développement local avec Docker
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    # URL JDBC vers le PostgreSQL Docker local
+    url: jdbc:postgresql://localhost:5432/ironpath
+    username: ironpath
+    password: ironpath_dev
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    # En dev, on affiche le SQL pour le debugging
+    show-sql: true
+
+# En dev, logging SQL détaillé pour tracer les requêtes
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+---
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PROFIL PROD — Production sur Render
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  datasource:
+    # DATABASE_URL fourni par Render au format postgresql://user:pass@host:port/db
+    # Spring Boot le convertit automatiquement en URL JDBC
+    url: ${DATABASE_URL}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: false
+
+# Swagger désactivé en production pour la sécurité
+# Les endpoints /api-docs et /swagger-ui ne sont pas exposés
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# En production, on log moins pour la performance
+logging:
+  level:
+    com.ironpath: INFO
+    org.hibernate.SQL: WARN

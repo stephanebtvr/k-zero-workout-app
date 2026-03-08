@@ -1,0 +1,148 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# frontend.yml — CI/CD Pipeline pour le frontend Angular
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Pipeline en 3 jobs :
+#   1. test   : exécute les tests Angular (Karma/Jest)
+#   2. build  : compile l'app Angular en mode production
+#   3. deploy : déploie sur Vercel
+#
+# Déclencheur : push sur main avec modifications dans frontend/
+
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+
+permissions:
+  contents: read
+
+jobs:
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 1 : Tests Angular
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Node 20 LTS — version stable pour Angular 18
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Cache npm : stocke node_modules pour éviter de re-installer
+      # le hash de package-lock.json est la clé de cache
+      # Gain moyen : 20-40 secondes par pipeline
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      # Installation des dépendances
+      # --prefer-offline : utilise le cache npm local si disponible
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Exécute les tests en mode CI (pas de navigateur interactif, une seule passe)
+      # --watch=false : pas de mode watch (une seule exécution)
+      # --browsers=ChromeHeadless : Chrome sans interface graphique
+      - name: Run tests
+        working-directory: frontend
+        run: npm run test -- --watch=false --browsers=ChromeHeadless
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 2 : Build de production
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  build:
+    name: Build Production
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-npm-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Build Angular en mode production :
+      # - Minification du JS et CSS
+      # - Tree-shaking (suppression du code inutilisé)
+      # - AOT (Ahead-of-Time compilation des templates)
+      # - Hashing des fichiers pour le cache-busting
+      - name: Build Angular app
+        working-directory: frontend
+        run: npx ng build --configuration production
+
+      # Sauvegarde l'artefact de build pour le job de déploiement
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist/
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # JOB 3 : Déploiement sur Vercel
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Déploiement via Vercel CLI
+      # Vercel détecte automatiquement le framework Angular
+      # Les variables d'environnement sont configurées dans le dashboard Vercel
+      #
+      # Secrets requis :
+      # - VERCEL_TOKEN : token d'API Vercel (obtenu dans les settings du compte)
+      # - VERCEL_ORG_ID : ID de l'organisation Vercel
+      # - VERCEL_PROJECT_ID : ID du projet Vercel
+      - name: Deploy to Vercel
+        working-directory: frontend
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          if [ -n "$VERCEL_TOKEN" ]; then
+            npx vercel --prod --token=$VERCEL_TOKEN
+            echo "✅ Deployed to Vercel"
+          else
+            echo "⚠️ VERCEL_TOKEN not set — skipping deploy"
+          fi

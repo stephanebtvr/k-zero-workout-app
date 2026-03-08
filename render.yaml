@@ -1,0 +1,66 @@
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# render.yaml — Infrastructure as Code pour Render
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+#
+# Ce fichier déclare les ressources Render de manière déclarative :
+# - Un web service Docker pour l'API Spring Boot
+# - Une base de données PostgreSQL
+#
+# Pour déployer : connecter le repo GitHub à Render → il détecte ce fichier
+# automatiquement et provisionne les ressources.
+#
+# Région Frankfurt (fra) :
+# - Latence optimale pour les utilisateurs européens (~20ms)
+# - Conforme aux réglementations GDPR (données en EU)
+# - Alternative : Oregon (ore) pour les utilisateurs US
+
+services:
+  # ━━━━ API Backend ━━━━
+  - type: web
+    name: ironpath-api
+    # Runtime Docker : Render utilise le Dockerfile du repo
+    runtime: docker
+    # Chemin vers le Dockerfile relatif à la racine du repo
+    dockerfilePath: ./backend/Dockerfile
+    # Contexte Docker : le répertoire backend contient les sources
+    dockerContext: ./backend
+    # Région du datacenter
+    region: frankfurt
+    # Plan gratuit — limitations :
+    # - 750 heures de compute/mois
+    # - S'endort après 15 minutes d'inactivité
+    # - Redémarrage à froid ~30 secondes
+    plan: free
+    # Branche Git surveillée pour les auto-deploy
+    branch: main
+    # Health check : Render vérifie que le service répond
+    healthCheckPath: /api/v1/health
+    # Variables d'environnement
+    envVars:
+      # Référence la base de données déclarée plus bas
+      # Render remplace automatiquement par l'URL JDBC complète
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ironpath-db
+          property: connectionString
+      # Secret JWT : stocké dans les secrets Render (pas en clair ici)
+      - key: JWT_SECRET
+        sync: false  # Valeur à définir manuellement dans le dashboard Render
+      # Origines CORS autorisées (URL Vercel du frontend)
+      - key: CORS_ORIGINS
+        sync: false  # À définir : https://ironpath.vercel.app
+      # Profil Spring actif en production
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+databases:
+  # ━━━━ Base de données PostgreSQL ━━━━
+  - name: ironpath-db
+    # Plan gratuit — limitations :
+    # - 256 Mo de stockage
+    # - 97 connexions max
+    # - Supprimée après 90 jours d'inactivité
+    plan: free
+    # Version PostgreSQL alignée avec le Docker de dev
+    databaseName: ironpath
+    region: frankfurt
