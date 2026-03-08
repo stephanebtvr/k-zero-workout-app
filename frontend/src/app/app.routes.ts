@@ -59,6 +59,19 @@ export const routes: Routes = [
         title: 'Créer un programme — IronPath'
     },
 
+    {
+        path: 'workout',
+        loadComponent: () => import('./features/workout/active-workout.component').then(m => m.ActiveWorkoutComponent),
+        canActivate: [authGuard],
+        title: 'Séance en cours — IronPath'
+    },
+    {
+        path: 'history',
+        loadComponent: () => import('./features/workout/workout-history.component').then(m => m.WorkoutHistoryComponent),
+        canActivate: [authGuard],
+        title: 'Historique — IronPath'
+    },
+
     // ━━━━ Redirections ━━━━
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
     { path: '**', redirectTo: '/dashboard' }
