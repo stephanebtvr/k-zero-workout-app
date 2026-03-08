@@ -183,6 +183,32 @@ class WorkoutService(
         logger.info("Séance supprimée : {} par l'utilisateur {}", id, userId)
     }
 
+    /** Export CSV de l'historique complet */
+    fun exportHistoryToCsv(userId: UUID): String {
+        val workouts = workoutRepository.findAllByUserId(userId).sortedByDescending { it.startTime }
+        
+        val sb = StringBuilder()
+        // Header
+        sb.append("Date,Workout Name,Duration (min),Exercise,Set Order,Weight (kg),Reps,Estimated 1RM,Warmup\n")
+        
+        for (workout in workouts) {
+            val dateStr = workout.startTime.toString()
+            val workoutName = workout.name.replace(",", " ")
+            val duration = workout.durationMinutes ?: 0
+            
+            for (sessionEx in workout.sessionExercises.sortedBy { it.orderIndex }) {
+                val exerciseName = sessionEx.exercise.name.replace(",", " ")
+                
+                for (set in sessionEx.sets.filter { it.isCompleted }.sortedBy { it.setOrder }) {
+                    sb.append(
+                        "$dateStr,$workoutName,$duration,$exerciseName,${set.setOrder},${set.weightKg},${set.reps},${set.estimated1RM},${set.isWarmup}\n"
+                    )
+                }
+            }
+        }
+        return sb.toString()
+    }
+
     private fun getWorkoutOwnedByUser(workoutId: UUID, userId: UUID): Workout {
         val workout = workoutRepository.findById(workoutId)
             ?: throw ResourceNotFoundException("Séance", workoutId)

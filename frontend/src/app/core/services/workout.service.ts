@@ -81,4 +81,8 @@ export class WorkoutService {
     cancelWorkout(workoutId: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${workoutId}`);
     }
+
+    exportCsv(): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/export`, { responseType: 'blob' });
+    }
 }

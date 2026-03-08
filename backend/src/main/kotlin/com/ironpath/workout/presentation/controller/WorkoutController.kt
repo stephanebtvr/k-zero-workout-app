@@ -76,6 +76,16 @@ class WorkoutController(
         return ResponseEntity.noContent().build()
     }
 
+    @GetMapping("/export")
+    @Operation(summary = "Exporter l'historique complet en CSV")
+    fun exportCsv(): ResponseEntity<String> {
+        val csvData = workoutService.exportHistoryToCsv(extractUserId())
+        return ResponseEntity.ok()
+            .header("Content-Type", "text/csv")
+            .header("Content-Disposition", "attachment; filename=\"ironpath-history.csv\"")
+            .body(csvData)
+    }
+
     private fun extractUserId(): UUID {
         val principal = SecurityContextHolder.getContext().authentication?.principal as? String
             ?: throw IllegalStateException("Utilisateur non authentifié")

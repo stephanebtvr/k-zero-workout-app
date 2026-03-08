@@ -3,12 +3,19 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { WorkoutService, Workout } from '../../core/services/workout.service';
 
 @Component({
-    selector: 'app-workout-history',
-    standalone: true,
-    imports: [CommonModule, DatePipe],
-    template: `
+  selector: 'app-workout-history',
+  standalone: true,
+  imports: [CommonModule, DatePipe],
+  template: `
     <div class="history-container">
-      <h1 class="page-title">Historique</h1>
+      <div class="header-actions">
+        <h1 class="page-title">Historique</h1>
+        @if (workouts().length > 0) {
+          <button (click)="onExport()" class="btn-export">
+            <span>📊 Exporter CSV</span>
+          </button>
+        }
+      </div>
 
       @if (isLoading()) {
         <div class="loading-state">Chargement...</div>
@@ -50,7 +57,7 @@ import { WorkoutService, Workout } from '../../core/services/workout.service';
       }
     </div>
   `,
-    styles: [`
+  styles: [`
     .history-container { padding: 48px 24px; max-width: 800px; margin: 0 auto; }
     .page-title { font-size: 32px; font-weight: 700; color: var(--text-primary, #1D1D1F); margin-bottom: 32px; letter-spacing: -0.5px; }
 
@@ -77,34 +84,54 @@ import { WorkoutService, Workout } from '../../core/services/workout.service';
     .empty-state p { color: var(--text-secondary, #6E6E73); }
     .loading-state { text-align: center; color: var(--text-secondary, #6E6E73); padding: 48px 0; }
 
+    .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+    .btn-export { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg, #FFF); border: 1px solid var(--border, #E5E5EA); border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--text-primary, #1D1D1F); transition: all 0.2s; }
+    .btn-export:hover { background: var(--surface, #F5F5F7); border-color: var(--text-secondary, #6E6E73); }
+
     :host-context(.dark) {
       .history-card { background: var(--surface, #1C1C1E); border-color: var(--border, #38383A); }
+      .btn-export { background: #1C1C1E; border-color: #38383A; color: #FFF; }
+      .btn-export:hover { background: #2C2C2E; }
       .exercises-summary, .empty-state { background: #000; }
     }
   `]
 })
 export class WorkoutHistoryComponent implements OnInit {
-    workouts = signal<Workout[]>([]);
-    isLoading = signal(true);
+  workouts = signal<Workout[]>([]);
+  isLoading = signal(true);
 
-    constructor(private workoutService: WorkoutService) { }
+  constructor(private workoutService: WorkoutService) { }
 
-    ngOnInit() {
-        this.loadHistory();
-    }
+  ngOnInit() {
+    this.loadHistory();
+  }
 
-    loadHistory() {
-        this.workoutService.getHistory().subscribe({
-            next: (data) => {
-                this.workouts.set(data);
-                this.isLoading.set(false);
-            },
-            error: () => this.isLoading.set(false)
-        });
-    }
+  loadHistory() {
+    this.workoutService.getHistory().subscribe({
+      next: (data) => {
+        this.workouts.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => this.isLoading.set(false)
+    });
+  }
 
-    getExercisesSummary(workout: Workout): string {
-        if (workout.sessionExercises.length === 0) return 'Aucun exercice';
-        return workout.sessionExercises.map(se => se.exercise.name).join(' • ');
-    }
+  onExport() {
+    this.workoutService.exportCsv().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `ironpath-history-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => console.error('Export failed', err)
+    });
+  }
+
+  getExercisesSummary(workout: Workout): string {
+    if (workout.sessionExercises.length === 0) return 'Aucun exercice';
+    return workout.sessionExercises.map(se => se.exercise.name).join(' • ');
+  }
 }
