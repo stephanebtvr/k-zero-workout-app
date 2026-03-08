@@ -39,6 +39,13 @@ export const routes: Routes = [
         title: 'Mon Profil — IronPath'
     },
 
+    {
+        path: 'exercises',
+        loadComponent: () => import('./features/exercises/exercise-list.component').then(m => m.ExerciseListComponent),
+        canActivate: [authGuard],
+        title: 'Exercices — IronPath'
+    },
+
     // ━━━━ Redirections ━━━━
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
     { path: '**', redirectTo: '/dashboard' }
