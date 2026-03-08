@@ -22,6 +22,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/register.component').then(m => m.RegisterComponent),
         title: 'Inscription — IronPath'
     },
+    {
+        path: 'demo',
+        loadComponent: () => import('./features/demo/demo.component').then(m => m.DemoComponent),
+        title: 'Démo Recruteurs — IronPath'
+    },
 
     // ━━━━ Routes protégées (avec Layout) ━━━━
     {
