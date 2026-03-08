@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers.print
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 
 @AutoConfigureMockMvc
@@ -34,7 +35,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
             post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest))
-        )
+        ).andDo(print())
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.accessToken").isNotEmpty)
             .andExpect(jsonPath("$.user.email").value("test.integration@ironpath.dev"))
@@ -66,9 +67,10 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
             post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))
-        )
+        ).andDo(print())
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.accessToken").isNotEmpty)
+            .andExpect(jsonPath("$.user.email").value("login.integration@ironpath.dev"))
     }
 
     @Test
