@@ -1,0 +1,15 @@
+spring:
+  jpa:
+    hibernate:
+      # Pour les tests d'intégration avec Testcontainers, on autorise Hibernate à mettre à jour le schéma.
+      # Cela complète Flyway et évite les erreurs de validation si l'ordre d'initialisation varie.
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Configuration spécifique pour Flyway en test si besoin
+  flyway:
+    enabled: true
+    clean-disabled: false # Permet de nettoyer entre les tests si besoin

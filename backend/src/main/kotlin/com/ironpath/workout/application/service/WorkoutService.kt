@@ -194,7 +194,7 @@ class WorkoutService(
         for (workout in workouts) {
             val dateStr = workout.startTime.toString()
             val workoutName = workout.name.replace(",", " ")
-            val duration = workout.durationMinutes ?: 0
+            val duration = workout.durationMinutes
             
             for (sessionEx in workout.sessionExercises.sortedBy { it.orderIndex }) {
                 val exerciseName = sessionEx.exercise.name.replace(",", " ")
