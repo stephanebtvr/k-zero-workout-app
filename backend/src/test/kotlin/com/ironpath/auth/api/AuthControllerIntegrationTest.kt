@@ -3,7 +3,9 @@ package com.ironpath.auth.api
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.ironpath.auth.application.dto.LoginRequest
 import com.ironpath.auth.application.dto.RegisterRequest
+import com.ironpath.auth.domain.repository.UserRepository
 import com.ironpath.common.AbstractIntegrationTest
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
@@ -22,10 +24,16 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
     @Autowired
     private lateinit var objectMapper: ObjectMapper
 
+    @Autowired
+    private lateinit var userRepository: UserRepository
+
+    private fun randomEmail(prefix: String) = "$prefix-${UUID.randomUUID()}@ironpath.dev"
+
     @Test
     fun `should register a new user successfully`() {
+        val email = randomEmail("register")
         val registerRequest = RegisterRequest(
-            email = "test.integration@ironpath.dev",
+            email = email,
             password = "Password123!",
             firstName = "Test",
             lastName = "Integration"
@@ -38,14 +46,15 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
         ).andDo(print())
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.accessToken").isNotEmpty)
-            .andExpect(jsonPath("$.user.email").value("test.integration@ironpath.dev"))
+            .andExpect(jsonPath("$.user.email").value(email))
     }
 
     @Test
     fun `should login existing user successfully`() {
+        val email = randomEmail("login")
         // 1. Register
         val registerRequest = RegisterRequest(
-            email = "login.integration@ironpath.dev",
+            email = email,
             password = "Password123!",
             firstName = "Login",
             lastName = "User"
@@ -57,9 +66,13 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
                 .content(objectMapper.writeValueAsString(registerRequest))
         ).andExpect(status().isCreated)
 
+        // 1b. Verify user exists in DB
+        val userInDb = userRepository.findByEmail(email)
+        assertNotNull(userInDb, "L'utilisateur devrait exister en base avant le login")
+
         // 2. Login
         val loginRequest = LoginRequest(
-            email = "login.integration@ironpath.dev",
+            email = email,
             password = "Password123!"
         )
 
@@ -70,7 +83,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
         ).andDo(print())
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.accessToken").isNotEmpty)
-            .andExpect(jsonPath("$.user.email").value("login.integration@ironpath.dev"))
+            .andExpect(jsonPath("$.user.email").value(email))
     }
 
     @Test

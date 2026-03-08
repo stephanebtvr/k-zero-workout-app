@@ -94,11 +94,16 @@ class AuthService(
         // 1. Recherche par email — message d'erreur générique pour la sécurité
         // On ne révèle pas si c'est l'email ou le password qui est faux
         val user = userRepository.findByEmail(request.email.lowercase().trim())
-            ?: throw InvalidCredentialsException()
+            ?: run {
+                logger.warn("ÉCHEC LOGIN [Email] : utilisateur non trouvé pour {}", request.email)
+                throw InvalidCredentialsException()
+            }
 
         // 2. Vérification du mot de passe via BCrypt
-        if (!passwordEncoder.matches(request.password, user.passwordHash)) {
-            logger.debug("Tentative de connexion échouée pour : {}", request.email)
+        val isPasswordMatch = passwordEncoder.matches(request.password, user.passwordHash)
+        if (!isPasswordMatch) {
+            logger.warn("ÉCHEC LOGIN [BCrypt] : email={}, pwdLen={}, hashLen={}", 
+                user.email, request.password.length, user.passwordHash.length)
             throw InvalidCredentialsException()
         }
 
