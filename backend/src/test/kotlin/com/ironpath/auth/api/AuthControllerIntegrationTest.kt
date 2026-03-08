@@ -5,6 +5,7 @@ import com.ironpath.auth.application.dto.LoginRequest
 import com.ironpath.auth.application.dto.RegisterRequest
 import com.ironpath.auth.domain.repository.UserRepository
 import com.ironpath.common.AbstractIntegrationTest
+import java.util.UUID
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
