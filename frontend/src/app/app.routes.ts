@@ -71,6 +71,13 @@ export const routes: Routes = [
         title: 'Historique — IronPath'
     },
 
+    {
+        path: 'measurements',
+        loadComponent: () => import('./features/measurements/measurements.component').then(m => m.MeasurementsComponent),
+        canActivate: [authGuard],
+        title: 'Mensurations — IronPath'
+    },
+
     // ━━━━ Redirections ━━━━
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
     { path: '**', redirectTo: '/dashboard' }
