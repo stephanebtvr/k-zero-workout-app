@@ -32,6 +32,13 @@ export const routes: Routes = [
         title: 'Tableau de bord — IronPath'
     },
 
+    {
+        path: 'profile',
+        loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent),
+        canActivate: [authGuard],
+        title: 'Mon Profil — IronPath'
+    },
+
     // ━━━━ Redirections ━━━━
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
     { path: '**', redirectTo: '/dashboard' }
