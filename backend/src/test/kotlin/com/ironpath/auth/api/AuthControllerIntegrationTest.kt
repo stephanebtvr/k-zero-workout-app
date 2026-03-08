@@ -36,7 +36,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
                 .content(objectMapper.writeValueAsString(registerRequest))
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.token").isNotEmpty)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
             .andExpect(jsonPath("$.user.email").value("test.integration@ironpath.dev"))
     }
 
@@ -68,7 +68,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
                 .content(objectMapper.writeValueAsString(loginRequest))
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.token").isNotEmpty)
+            .andExpect(jsonPath("$.accessToken").isNotEmpty)
     }
 
     @Test
