@@ -1,4 +1,4 @@
-import api from './api';
+import { apiRequest } from './api';
 
 export interface UserStatsSummary {
     totalWorkouts: number;
@@ -19,19 +19,14 @@ export interface OneRmProgression {
 
 export const statsService = {
     getSummary: async (): Promise<UserStatsSummary> => {
-        const response = await api.get<UserStatsSummary>('/stats/summary');
-        return response.data;
+        return await apiRequest('/stats/summary');
     },
 
     getHeatmap: async (): Promise<HeatmapData[]> => {
-        const response = await api.get<HeatmapData[]>('/stats/heatmap');
-        return response.data;
+        return await apiRequest('/stats/heatmap');
     },
 
     getOneRmProgression: async (exerciseId: string): Promise<OneRmProgression[]> => {
-        const response = await api.get<OneRmProgression[]>('/stats/1rm-progression', {
-            params: { exerciseId }
-        });
-        return response.data;
+        return await apiRequest(`/stats/1rm-progression?exerciseId=${exerciseId}`);
     }
 };

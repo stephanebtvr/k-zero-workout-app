@@ -1,4 +1,4 @@
-import api from './api';
+import { apiRequest } from './api';
 
 export interface Measurement {
     id: string;
@@ -28,16 +28,17 @@ export interface CreateOrUpdateMeasurementRequest {
 
 export const measurementService = {
     getAll: async (): Promise<Measurement[]> => {
-        const response = await api.get<Measurement[]>('/measurements');
-        return response.data;
+        return await apiRequest<Measurement[]>('/measurements', { method: 'GET' });
     },
 
     save: async (request: CreateOrUpdateMeasurementRequest): Promise<Measurement> => {
-        const response = await api.post<Measurement>('/measurements', request);
-        return response.data;
+        return await apiRequest<Measurement>('/measurements', {
+            method: 'POST',
+            body: JSON.stringify(request)
+        });
     },
 
     delete: async (id: string): Promise<void> => {
-        await api.delete(`/measurements/${id}`);
+        await apiRequest<void>(`/measurements/${id}`, { method: 'DELETE' });
     }
 };

@@ -2,81 +2,81 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Dimensions, TouchableOpacity } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import { statsService, UserStatsSummary, HeatmapData, OneRmProgression } from '../services/statsService';
-import api from '../services/api';
+import { apiRequest } from '../services/api';
 
 const screenWidth = Dimensions.get('window').width;
 
 interface Exercise {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 export default function StatsScreen() {
-    const [loading, setLoading] = useState(true);
-    const [summary, setSummary] = useState<UserStatsSummary | null>(null);
-    const [heatmap, setHeatmap] = useState<HeatmapData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<UserStatsSummary | null>(null);
+  const [heatmap, setHeatmap] = useState<HeatmapData[]>([]);
 
-    const [exercises, setExercises] = useState<Exercise[]>([]);
-    const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
-    const [oneRmProgression, setOneRmProgression] = useState<OneRmProgression[]>([]);
+  const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [selectedExercise, setSelectedExercise] = useState<string | null>(null);
+  const [oneRmProgression, setOneRmProgression] = useState<OneRmProgression[]>([]);
 
-    const [loading1RM, setLoading1RM] = useState(false);
+  const [loading1RM, setLoading1RM] = useState(false);
 
-    useEffect(() => {
-        fetchInitialData();
-    }, []);
+  useEffect(() => {
+    fetchInitialData();
+  }, []);
 
-    const fetchInitialData = async () => {
-        try {
-            const [sumData, heatData, exData] = await Promise.all([
-                statsService.getSummary(),
-                statsService.getHeatmap(),
-                api.get<Exercise[]>('/exercises').then(res => res.data)
-            ]);
-            setSummary(sumData);
-            setHeatmap(heatData);
+  const fetchInitialData = async () => {
+    try {
+      const [sumData, heatData, exData] = await Promise.all([
+        statsService.getSummary(),
+        statsService.getHeatmap(),
+        apiRequest('/exercises') as Promise<Exercise[]>
+      ]);
+      setSummary(sumData);
+      setHeatmap(heatData);
 
-            const sortedEx = exData.sort((a, b) => a.name.localeCompare(b.name));
-            setExercises(sortedEx);
+      const sortedEx = exData.sort((a: Exercise, b: Exercise) => a.name.localeCompare(b.name));
+      setExercises(sortedEx);
 
-            if (sortedEx.length > 0) {
-                setSelectedExercise(sortedEx[0].id);
-                fetch1RM(sortedEx[0].id);
-            } else {
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error("Erreur lors du chargement des statistiques", error);
-        } finally {
-            if (loading) setLoading(false);
-        }
-    };
-
-    const fetch1RM = async (exerciseId: string) => {
-        setLoading1RM(true);
-        setSelectedExercise(exerciseId);
-        try {
-            const data = await statsService.getOneRmProgression(exerciseId);
-            setOneRmProgression(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading1RM(false);
-        }
-    };
-
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#0071E3" />
-            </View>
-        );
+      if (sortedEx.length > 0) {
+        setSelectedExercise(sortedEx[0].id);
+        fetch1RM(sortedEx[0].id);
+      } else {
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement des statistiques", error);
+    } finally {
+      if (loading) setLoading(false);
     }
+  };
 
-    const chartConfig = {
-        backgroundGradientFrom: "#1D1D1F",
-        backgroundGradientTo: "#1D1D1F",
-        color: (opacity = 1) => \`rgba(255, 255, 255, \${opacity})\`,
+  const fetch1RM = async (exerciseId: string) => {
+    setLoading1RM(true);
+    setSelectedExercise(exerciseId);
+    try {
+      const data = await statsService.getOneRmProgression(exerciseId);
+      setOneRmProgression(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading1RM(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0071E3" />
+      </View>
+    );
+  }
+
+  const chartConfig = {
+    backgroundGradientFrom: "#1D1D1F",
+    backgroundGradientTo: "#1D1D1F",
+    color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
     strokeWidth: 2,
     barPercentage: 0.5,
     useShadowColorFromDataset: false,
@@ -90,7 +90,7 @@ export default function StatsScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.headerTitle}>Tableau de bord</Text>
-      
+
       {summary && (
         <View style={styles.summaryGrid}>
           <View style={styles.summaryCard}>
@@ -115,11 +115,11 @@ export default function StatsScreen() {
       {/* 1RM Progression */}
       <View style={styles.chartSection}>
         <Text style={styles.sectionTitle}>Progression 1RM</Text>
-        
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
           {exercises.map(ex => (
-            <TouchableOpacity 
-              key={ex.id} 
+            <TouchableOpacity
+              key={ex.id}
               style={[styles.chip, selectedExercise === ex.id && styles.chipActive]}
               onPress={() => fetch1RM(ex.id)}
             >
@@ -133,8 +133,8 @@ export default function StatsScreen() {
         {loading1RM ? (
           <ActivityIndicator color="#0071E3" style={{ marginVertical: 30 }} />
         ) : oneRmProgression.length > 0 ? (
-           <View style={styles.chartWrapper}>
-             <LineChart
+          <View style={styles.chartWrapper}>
+            <LineChart
               data={{
                 labels: oneRmProgression.map(d => d.date.substring(5)), // MM-DD
                 datasets: [{ data: oneRmProgression.map(d => d.estimated1RM) }]
@@ -146,7 +146,7 @@ export default function StatsScreen() {
               bezier
               style={{ borderRadius: 16 }}
             />
-           </View>
+          </View>
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>Aucune donnée 1RM disponible.</Text>
@@ -159,7 +159,7 @@ export default function StatsScreen() {
         <Text style={styles.sectionTitle}>Fréquence d'entraînement</Text>
         {heatmap.length > 0 ? (
           <View style={styles.chartWrapper}>
-             <BarChart
+            <BarChart
               data={{
                 labels: heatmap.map(d => d.date.substring(5)),
                 datasets: [{ data: heatmap.map(d => d.count) }]
@@ -170,7 +170,7 @@ export default function StatsScreen() {
               yAxisSuffix=""
               chartConfig={{
                 ...chartConfig,
-                color: (opacity = 1) => \`rgba(52, 199, 89, \${opacity})\`
+                color: (opacity = 1) => `rgba(52, 199, 89, ${opacity})`
               }}
               style={{ borderRadius: 16 }}
             />

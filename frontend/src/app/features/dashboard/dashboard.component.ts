@@ -266,7 +266,7 @@ export class DashboardComponent implements OnInit {
     }
 
     private loadExercises() {
-        this.exerciseService.getExercises().subscribe(exs => {
+        this.exerciseService.listAll().subscribe(exs => {
             // Trier alphabétiquement
             exs.sort((a, b) => a.name.localeCompare(b.name));
             this.exercises.set(exs);
