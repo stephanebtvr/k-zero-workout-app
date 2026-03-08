@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
 @RestController
-@RequestMapping("/api/v1/stats")
+@RequestMapping("/stats")
 class StatsController(
     private val statsService: StatsService
 ) {

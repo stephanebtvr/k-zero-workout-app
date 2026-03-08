@@ -31,7 +31,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
         )
 
         mockMvc.perform(
-            post("/api/v1/auth/register")
+            post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest))
         )
@@ -51,7 +51,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
         )
 
         mockMvc.perform(
-            post("/api/v1/auth/register")
+            post("/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest))
         ).andExpect(status().isCreated)
@@ -63,7 +63,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
         )
 
         mockMvc.perform(
-            post("/api/v1/auth/login")
+            post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))
         )
@@ -79,7 +79,7 @@ class AuthControllerIntegrationTest : AbstractIntegrationTest() {
         )
 
         mockMvc.perform(
-            post("/api/v1/auth/login")
+            post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(loginRequest))
         )
