@@ -46,6 +46,19 @@ export const routes: Routes = [
         title: 'Exercices — IronPath'
     },
 
+    {
+        path: 'programs',
+        loadComponent: () => import('./features/programs/program-list.component').then(m => m.ProgramListComponent),
+        canActivate: [authGuard],
+        title: 'Mes Programmes — IronPath'
+    },
+    {
+        path: 'programs/new',
+        loadComponent: () => import('./features/programs/program-builder.component').then(m => m.ProgramBuilderComponent),
+        canActivate: [authGuard],
+        title: 'Créer un programme — IronPath'
+    },
+
     // ━━━━ Redirections ━━━━
     { path: '', redirectTo: '/dashboard', pathMatch: 'full' },
     { path: '**', redirectTo: '/dashboard' }
