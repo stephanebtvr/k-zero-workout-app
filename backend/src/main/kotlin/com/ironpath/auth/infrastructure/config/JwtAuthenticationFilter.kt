@@ -22,7 +22,7 @@ import org.springframework.web.filter.OncePerRequestFilter
  * (même si la requête est forwardée en interne).
  *
  * Le filtre est silencieux en cas d'absence de token :
- * les routes publiques (/auth/**) n'envoient pas de Bearer token.
+ * les routes publiques (/auth/...) n'envoient pas de Bearer token.
  */
 @Component
 class JwtAuthenticationFilter(

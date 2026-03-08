@@ -20,7 +20,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
  * - Pas de session HTTP (chaque requête est authentifiée par son token)
  * - CSRF désactivé (justifié ci-dessous)
  * - CORS configuré depuis application.yml
- * - Routes publiques : /auth/**, /health, /swagger-ui/**, /api-docs/**
+ * - Routes publiques : /auth/..., /health, /swagger-ui/..., /api-docs/...
  * - Toutes les autres routes requièrent un Bearer token valide
  *
  * Chaîne de filtres :
