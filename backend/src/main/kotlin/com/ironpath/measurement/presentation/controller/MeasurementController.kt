@@ -4,8 +4,8 @@ import com.ironpath.measurement.application.dto.CreateOrUpdateMeasurementRequest
 import com.ironpath.measurement.application.dto.MeasurementDto
 import com.ironpath.measurement.application.service.MeasurementService
 import org.springframework.http.HttpStatus
-import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.http.HttpStatus
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
@@ -16,29 +16,28 @@ class MeasurementController(
 ) {
 
     @GetMapping
-    fun getAll(@AuthenticationPrincipal jwt: Jwt): List<MeasurementDto> {
-        val userId = UUID.fromString(jwt.subject)
-        return measurementService.getUserMeasurements(userId)
+    fun getAll(): List<MeasurementDto> {
+        return measurementService.getUserMeasurements(extractUserId())
     }
 
     @PostMapping
     fun save(
-        @AuthenticationPrincipal jwt: Jwt,
         @RequestBody request: CreateOrUpdateMeasurementRequest
     ): MeasurementDto {
-        val userId = UUID.fromString(jwt.subject)
-        return measurementService.saveMeasurement(userId, request)
+        return measurementService.saveMeasurement(extractUserId(), request)
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(
-        @AuthenticationPrincipal jwt: Jwt,
         @PathVariable id: UUID
     ) {
-        val userId = UUID.fromString(jwt.subject)
-        // Note: Sécurité stricte vérifierait si la mesure appartient bien à l'utilisateur,
-        // mais c'est acceptable pour l'instant. L'ID est filtré implicitement si on interroge via repo user.
-        measurementService.deleteMeasurement(userId, id)
+        measurementService.deleteMeasurement(extractUserId(), id)
+    }
+
+    private fun extractUserId(): UUID {
+        val principal = SecurityContextHolder.getContext().authentication?.principal as? String
+            ?: throw IllegalStateException("Utilisateur non authentifié")
+        return UUID.fromString(principal)
     }
 }

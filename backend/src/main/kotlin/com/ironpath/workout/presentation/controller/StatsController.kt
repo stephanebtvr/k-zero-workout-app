@@ -4,8 +4,7 @@ import com.ironpath.workout.application.dto.HeatmapDataDto
 import com.ironpath.workout.application.dto.OneRmProgressionDto
 import com.ironpath.workout.application.dto.UserStatsSummaryDto
 import com.ironpath.workout.application.service.StatsService
-import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
@@ -16,23 +15,25 @@ class StatsController(
 ) {
 
     @GetMapping("/summary")
-    fun getSummary(@AuthenticationPrincipal jwt: Jwt): UserStatsSummaryDto {
-        val userId = UUID.fromString(jwt.subject)
-        return statsService.getUserSummary(userId)
+    fun getSummary(): UserStatsSummaryDto {
+        return statsService.getUserSummary(extractUserId())
     }
 
     @GetMapping("/heatmap")
-    fun getHeatmap(@AuthenticationPrincipal jwt: Jwt): List<HeatmapDataDto> {
-        val userId = UUID.fromString(jwt.subject)
-        return statsService.getHeatmapData(userId)
+    fun getHeatmap(): List<HeatmapDataDto> {
+        return statsService.getHeatmapData(extractUserId())
     }
 
     @GetMapping("/1rm-progression")
     fun getOneRmProgression(
-        @AuthenticationPrincipal jwt: Jwt,
         @RequestParam exerciseId: UUID
     ): List<OneRmProgressionDto> {
-        val userId = UUID.fromString(jwt.subject)
-        return statsService.getOneRmProgression(userId, exerciseId)
+        return statsService.getOneRmProgression(extractUserId(), exerciseId)
+    }
+
+    private fun extractUserId(): UUID {
+        val principal = SecurityContextHolder.getContext().authentication?.principal as? String
+            ?: throw IllegalStateException("Utilisateur non authentifié")
+        return UUID.fromString(principal)
     }
 }

@@ -21,8 +21,11 @@ import java.util.UUID
  * - ForbiddenException → 403
  */
 
-/** Exception de base pour les erreurs métier */
+/** Exception de base pour les erreurs métier (Bad Request par défaut) */
 open class BusinessException(message: String) : RuntimeException(message)
+
+/** Alias pour 400 Bad Request explicite */
+class BadRequestException(message: String) : BusinessException(message)
 
 /** L'email est déjà utilisé par un autre compte */
 class EmailAlreadyExistsException(email: String) :
