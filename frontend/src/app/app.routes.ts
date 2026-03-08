@@ -26,8 +26,7 @@ export const routes: Routes = [
     // ━━━━ Routes protégées ━━━━
     {
         path: 'dashboard',
-        loadComponent: () => import('./features/auth/login.component').then(m => m.LoginComponent),
-        // Placeholder : sera remplacé par le vrai DashboardComponent à l'étape 7
+        loadComponent: () => import('./features/dashboard/dashboard.component').then(m => m.DashboardComponent),
         canActivate: [authGuard],
         title: 'Tableau de bord — IronPath'
     },
