@@ -1,0 +1,94 @@
+/*
+ * styles.css — Styles globaux IronPath
+ *
+ * Design System Apple épuré.
+ * Variables CSS pour le dark mode.
+ * Typographie SF Pro → Inter → system-ui.
+ */
+
+/* ━━━━ CSS Reset minimal ━━━━ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ━━━━ Design Tokens (Light Mode) ━━━━ */
+:root {
+  --bg: #FFFFFF;
+  --surface: #F5F5F7;
+  --border: #E5E5EA;
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --accent: #0071E3;
+  --accent-hover: #0062C4;
+  --success: #34C759;
+  --danger: #FF3B30;
+
+  /* Typographie */
+  --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Rayons */
+  --radius: 12px;
+  --radius-sm: 8px;
+
+  /* Transitions */
+  --transition: 200ms ease;
+  --transition-slow: 300ms ease;
+}
+
+/* ━━━━ Design Tokens (Dark Mode) ━━━━ */
+.dark {
+  --bg: #000000;
+  --surface: #1C1C1E;
+  --border: #38383A;
+  --text-primary: #F5F5F7;
+  --text-secondary: #98989D;
+  --success: #30D158;
+  --danger: #FF453A;
+}
+
+/* ━━━━ Base ━━━━ */
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg);
+  color: var(--text-primary);
+  line-height: 1.5;
+  transition: background-color var(--transition), color var(--transition);
+}
+
+/* ━━━━ Liens ━━━━ */
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* ━━━━ Scrollbar stylisée (WebKit) ━━━━ */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
